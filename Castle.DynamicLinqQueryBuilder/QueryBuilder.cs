@@ -166,7 +166,19 @@ namespace Castle.DynamicLinqQueryBuilder
                 }
                 else
                 {
-                    propertyExp = Expression.Property(pe, rule.Field);
+                    var propertyList = rule.Field.Split('.').ToList();
+                    if (propertyList.Count() > 1)
+                    {
+                        propertyExp = Expression.Property(pe, propertyList.First());
+                        foreach (var prop in propertyList.Skip(1))
+                        {
+                            propertyExp = Expression.Property(propertyExp, prop);
+                        }
+                    }
+                    else
+                    {
+                        propertyExp = Expression.Property(pe, rule.Field);
+                    }
                 }
 
                 Expression expression;
@@ -548,7 +560,7 @@ namespace Castle.DynamicLinqQueryBuilder
                 Expression exOut;
 
                 if (someValues.Count > 1)
-                {
+                {                    
                     exOut = Expression.Call(propertyExp, method, Expression.Convert(someValues[0], genericType));
                     var counter = 1;
                     while (counter < someValues.Count)
@@ -636,7 +648,7 @@ namespace Castle.DynamicLinqQueryBuilder
 
             var oType = o;
 
-            if (oType.IsGenericType && (oType.GetGenericTypeDefinition() == typeof(List<>)))
+            if (oType.IsGenericType && ((oType.GetGenericTypeDefinition() == typeof(IEnumerable<>)) || (oType.GetGenericTypeDefinition() == typeof(ICollection<>)) || (oType.GetGenericTypeDefinition() == typeof(List<>))))
                 isGenericList = true;
 
             return isGenericList;
