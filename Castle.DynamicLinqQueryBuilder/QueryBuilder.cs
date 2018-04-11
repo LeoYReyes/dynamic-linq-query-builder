@@ -191,6 +191,7 @@ namespace Castle.DynamicLinqQueryBuilder
                 if (useIndexedProperty)
                 {
                     propertyExp = Expression.Property(pe, indexedPropertyName, Expression.Constant(rule.Field));
+                    return GetOperatorExpression(rule.Operator, ruleType, rule.Value, propertyExp);
                 }
                 else
                 {
@@ -628,15 +629,25 @@ namespace Castle.DynamicLinqQueryBuilder
 
                 if (someValues.Count > 1)
                 {
-                    var valueExpression = Expression.Call(someValues[0], typeof(string).GetMethod("ToLower", Type.EmptyTypes));
-                    exOut = Expression.Call(propertyExp, method, Expression.Convert(valueExpression, genericType));
-                    var counter = 1;
-                    while (counter < someValues.Count)
+                    if (type == typeof(string))
                     {
-                        valueExpression = Expression.Call(someValues[counter], typeof(string).GetMethod("ToLower", Type.EmptyTypes));
-                        exOut = Expression.Or(exOut,
-                            Expression.Call(propertyExp, method, Expression.Convert(valueExpression, genericType)));
-                        counter++;
+                        var valueExpression = Expression.Call(someValues[0], typeof(string).GetMethod("ToLower", Type.EmptyTypes));
+                        exOut = Expression.Call(propertyExp, method, Expression.Convert(valueExpression, genericType));
+                        for (int i = 1; i < someValues.Count; i++)
+                        {
+                            valueExpression = Expression.Call(someValues[i], typeof(string).GetMethod("ToLower", Type.EmptyTypes));
+                            exOut = Expression.Or(exOut,
+                                Expression.Call(propertyExp, method, Expression.Convert(valueExpression, genericType)));
+                        }
+                    }
+                    else
+                    {
+                        exOut = Expression.Call(propertyExp, method, Expression.Convert(someValues[0], genericType));
+                        for (int i = 1; i < someValues.Count; i++)
+                        {
+                            exOut = Expression.Or(exOut,
+                                Expression.Call(propertyExp, method, Expression.Convert(someValues[i], genericType)));
+                        }
                     }
                 }
                 else
